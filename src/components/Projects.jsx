@@ -7,10 +7,16 @@ const Projects = () => {
   const [desc, setdesc] = useState("");
   const [clientid, setclientid] = useState("");
   const [clients, setclients] = useState([]);
+  const [loading, setloading] = useState(false);
+  const [status, setstatus] = useState("Pending");
   //client id option
   function clientsid(e) {
     setclientid(e.target.value);
   }
+  function statusid(e) {
+    setstatus(e.target.value);
+  }
+  ///adding project handling
   async function handlesubmit(e) {
     e.preventDefault();
     if (!title || !desc) {
@@ -18,9 +24,14 @@ const Projects = () => {
       return;
     }
 
-    const { error } = await supabase
-      .from("projects")
-      .insert([{ title: title, description: desc, client_id: clientid }]);
+    const { error } = await supabase.from("projects").insert([
+      {
+        title: title,
+        description: desc,
+        client_id: clientid,
+        status: status,
+      },
+    ]);
     if (error) {
       alert(error.message);
       return;
@@ -50,7 +61,9 @@ const Projects = () => {
     fetchproject();
     fetchclients();
   }, []);
+  //suparabase getting p
   async function fetchproject() {
+    setloading(true);
     const { data, error } = await supabase.from("projects").select("*");
     if (error) {
       alert(error.message);
@@ -58,17 +71,58 @@ const Projects = () => {
     } else {
       setproject(data);
     }
+    setloading(false);
+  }
+
+  async function handledelete(id) {
+    const { error } = await supabase.from("projects").delete().eq("id", id);
+    if (error) {
+      alert(error.message);
+      return;
+    } else {
+      alert("successfully deleting");
+    }
+    fetchproject();
+  }
+  function grouped(status) {
+    return project.filter((allele) => {
+      allele.status === status;
+    });
   }
   return (
     <div>
       <h2> Projects</h2>
-      <ul>
-        {project.map((allele) => (
-          <li key={allele.id}>
-            {allele.title}- {allele.description} - {allele.status}
-          </li>
-        ))}
-      </ul>
+      {loading ? (
+        <p style={{ backgroundColor: "red" }}>Projects are Loading</p>
+      ) : (
+        <div>
+          {["pending", "inprogress", "completed"].map((allele) => (
+            <div>
+              <ul>
+                <li>{allele}</li>
+              </ul>
+              {grouped(allele).map((allele2) => {
+                <li> {allele2.title}</li>;
+              })}
+            </div>
+          ))}
+
+          <ul>
+            {project.map((allele) => (
+              <li key={allele.id}>
+                {allele.title}- {allele.description} - {allele.status}
+                <button
+                  onClick={() => {
+                    handledelete(allele.id);
+                  }}
+                >
+                  Delete
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       <h1>add projects</h1>
       <form action="">
         <input
@@ -92,6 +146,11 @@ const Projects = () => {
               </option>
             </div>
           ))}
+        </select>
+        <select name="status" value={status} onChange={statusid}>
+          <option value="Completed"> Completed</option>
+          <option value="inprogress"> inprogress</option>
+          <option value="Pending"> Pending</option>
         </select>
         <button onClick={handlesubmit}>ADD</button>
       </form>

@@ -15,7 +15,7 @@ const Clients = () => {
 
     const { error } = await supabase
       .from("clients")
-      .insert([{ name: name, email: email }]);
+      .insert([{ name: name, email: email }]); //new client adding
     if (error) {
       alert(error.message);
       return;
@@ -45,7 +45,18 @@ const Clients = () => {
       setclients(data);
     }
   }
+  //delete
 
+  async function handledelete(id) {
+    const { error } = await supabase.from("clients").delete().eq("id", id);
+    if (error) {
+      alert(error.message);
+      return;
+    } else {
+      alert("client has been deleted successfully");
+    }
+    fetchclients();
+  }
   return (
     <div>
       <h1>My Clients</h1>
@@ -53,9 +64,17 @@ const Clients = () => {
         {clients.map((allele) => (
           <li key={allele.id}>
             {allele.name} - {allele.email}
+            <button
+              onClick={() => {
+                handledelete(allele.id);
+              }}
+            >
+              Delete
+            </button>
           </li>
         ))}
       </ul>
+
       <h1>add client</h1>
       <form action="">
         <input
