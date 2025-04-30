@@ -1,29 +1,54 @@
 import React, { useEffect, useState } from "react";
 import supabase from "../utils/Supabase";
+import { handleclientediting } from "../backend/Curd";
 
 const Clients = () => {
   const [clients, setclients] = useState([]);
   const [name, setname] = useState("");
   const [email, setemail] = useState("");
+  const [editingid, seteditingid] = useState(null);
 
+  function handleediting(client) {
+    setname(client.name);
+    setemail(client.email);
+    seteditingid(client.id);
+  }
   async function handlesubmit(e) {
     e.preventDefault();
     if (!name || !email) {
       alert("kindly fill the inputs");
       return;
     }
-
-    const { error } = await supabase
-      .from("clients")
-      .insert([{ name: name, email: email }]); //new client adding
-    if (error) {
-      alert(error.message);
-      return;
-    } else {
+    if (editingid) {
+      ///if editing id is null, else will run updating a client
+      const { error } = await supabase
+        .from("clients")
+        .update([{ name: name, email: email }])
+        .eq("id", editingid);
+      if (error) {
+        alert(error.message);
+        return;
+      } else {
+        seteditingid(null);
+      }
       setname("");
       setemail("");
-      alert("client added successfully");
+      alert("client Updated successfully");
+    } else {
+      ///inserting new clients
+      const { error } = await supabase
+        .from("clients")
+        .insert([{ name: name, email: email }]); //new client adding
+      if (error) {
+        alert(error.message);
+        return;
+      } else {
+        setname("");
+        setemail("");
+        alert("client added successfully");
+      }
     }
+
     fetchclients(); //automatically refreh and show
   }
 
@@ -71,6 +96,13 @@ const Clients = () => {
             >
               Delete
             </button>
+            <button
+              onClick={() => {
+                handleediting(allele);
+              }}
+            >
+              Update
+            </button>
           </li>
         ))}
       </ul>
@@ -89,7 +121,7 @@ const Clients = () => {
           value={email}
           onChange={emails}
         />
-        <button onClick={handlesubmit}>ADD</button>
+        <button onClick={handlesubmit}>{editingid ? "Update" : "ADD"}</button>
       </form>
     </div>
   );

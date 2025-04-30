@@ -9,6 +9,16 @@ const Projects = () => {
   const [clients, setclients] = useState([]);
   const [loading, setloading] = useState(false);
   const [status, setstatus] = useState("Pending");
+  const [editingid, seteditingid] = useState(null);
+
+  function handleedit(project) {
+    settitle(project.title);
+    setstatus(project.status);
+    setdesc(project.description);
+    setclientid(project.client_id);
+    seteditingid(project.id);
+  }
+
   //client id option
   function clientsid(e) {
     setclientid(e.target.value);
@@ -24,22 +34,46 @@ const Projects = () => {
       return;
     }
 
-    const { error } = await supabase.from("projects").insert([
-      {
-        title: title,
-        description: desc,
-        client_id: clientid,
-        status: status,
-      },
-    ]);
-    if (error) {
-      alert(error.message);
-      return;
-    } else {
+    if (editingid) {
+      const { error } = await supabase
+        .from("projects")
+        .update([
+          {
+            title: title,
+            description: desc,
+            client_id: clientid,
+            status: status,
+          },
+        ])
+        .eq("id", editingid);
+      if (error) {
+        alert(error.message + "error here");
+        return;
+      } else {
+        seteditingid(null);
+      }
       settitle("");
       setdesc("");
-      alert("Successfully Submit");
+      alert("Successfully updated Submit");
+    } else {
+      const { error } = await supabase.from("projects").insert([
+        {
+          title: title,
+          description: desc,
+          client_id: clientid,
+          status: status,
+        },
+      ]);
+      if (error) {
+        alert(error.message);
+        return;
+      } else {
+        settitle("");
+        setdesc("");
+        alert("Successfully Submit");
+      }
     }
+
     fetchproject();
   }
   async function fetchclients() {
@@ -96,7 +130,7 @@ const Projects = () => {
         <p style={{ backgroundColor: "red" }}>Projects are Loading</p>
       ) : (
         <div>
-          {["pending", "inprogress", "completed"].map((allele) => (
+          {/* {["pending", "inprogress", "completed"].map((allele) => (
             <div>
               <ul>
                 <li>{allele}</li>
@@ -105,7 +139,7 @@ const Projects = () => {
                 <li> {allele2.title}</li>;
               })}
             </div>
-          ))}
+          ))} */}
 
           <ul>
             {project.map((allele) => (
@@ -117,6 +151,13 @@ const Projects = () => {
                   }}
                 >
                   Delete
+                </button>
+                <button
+                  onClick={() => {
+                    handleedit(allele);
+                  }}
+                >
+                  Update project
                 </button>
               </li>
             ))}
@@ -152,7 +193,7 @@ const Projects = () => {
           <option value="inprogress"> inprogress</option>
           <option value="Pending"> Pending</option>
         </select>
-        <button onClick={handlesubmit}>ADD</button>
+        <button onClick={handlesubmit}>{editingid ? "update" : "add"}</button>
       </form>
     </div>
   );
